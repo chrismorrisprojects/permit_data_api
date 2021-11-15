@@ -1,8 +1,11 @@
-module.exports = app => {
-    const tutorials = require("../controllers/uicData.js");
+const express = require('express');
+const router = express.Router();
+const ctrlRrcUic = require( '../controllers/uicData')
 
-    const router = require("express").Router();
-    router.get("/api/uic", tutorials.findAll);
-    router.get("/api/uic/:id", tutorials.findByUIC);
 
-};
+router
+    .route('/uic')
+    .get(ctrlRrcUic.getAllUic);
+
+
+module.exports = router;

@@ -19,6 +19,6 @@ const db = {};
 db.Sequelize = Sequelize;
 db.sequelize = sequelize;
 
-db.tutorials = require("../models/rrc_uic.js")(sequelize, Sequelize);
+db.rrc_uic = require("../models/rrc_uic.js")(sequelize, Sequelize);
 
 module.exports = db;
