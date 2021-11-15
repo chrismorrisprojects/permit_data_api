@@ -1,39 +1,24 @@
 require('dotenv').config();
-const fs = require('fs');
-const path = require('path');
-const Sequelize = require('sequelize');
-const basename = path.basename(module.filename);
 const env = process.env.NODE_ENV || 'development';
-const config = require(`${__dirname}/../config/config.json`)[env];
-const db = {};
+const Sequelize = require("sequelize");
+const sequelize = new Sequelize(process.env.PGDATABASE,process.env.PGUSER,process.env.PGPASSWORD, {
+    host: process.env.PGHOST,
+    dialect: "postgres",
+    operatorsAliases: false,
 
-let sequelize;
-if (config.use_env_variable) {
-  sequelize = new Sequelize(process.env.PGDATABASE,process.env.PGUSER,process.env.PGPASSWORD);
-} else {
-  sequelize = new Sequelize(
-      config.database, config.username, config.password, config
-  );
-}
-
-fs
-    .readdirSync(__dirname)
-    .filter(file =>
-        (file.indexOf('.') !== 0) &&
-        (file !== basename) &&
-        (file.slice(-3) === '.js'))
-    .forEach(file => {
-      const model = sequelize.import(path.join(__dirname, file));
-      db[model.name] = model;
-    });
-
-Object.keys(db).forEach(modelName => {
-  if (db[modelName].associate) {
-    db[modelName].associate(db);
-  }
+    pool: {
+        max: 5,
+        min: 0,
+        acquire: 30000,
+        idle: 10000
+    }
 });
 
-db.sequelize = sequelize;
+const db = {};
+
 db.Sequelize = Sequelize;
+db.sequelize = sequelize;
+
+db.tutorials = require("../models/rrc_uic.js")(sequelize, Sequelize);
 
 module.exports = db;
