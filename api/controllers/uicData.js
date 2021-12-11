@@ -1,15 +1,19 @@
 const rrc_uic = require("../models").rrc_uic
+const uicQryServices = require("../services/uicQryServices")
 
-module.exports = {
-    async getAllUic(req, res) {
+const uicQuery = async (req, res) => {
+    const validUicFilters = await uicQryServices.parseFilters(req.body)
         try {
             const uicCollection = await rrc_uic.findAll({
-                limit: 10
+                where: validUicFilters
             })
             res.status(200).json(uicCollection)
         } catch (e) {
             console.log(e)
             res.status(500).send(e)
         }
-    }
+}
+
+module.exports = {
+    uicQuery
 }

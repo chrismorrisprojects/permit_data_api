@@ -5,7 +5,7 @@ const ctrlRrcUic = require( '../controllers/uicData')
 
 router
     .route('/uic')
-    .get(ctrlRrcUic.getAllUic);
+    .get(ctrlRrcUic.uicQuery);
 
 
 module.exports = router;
