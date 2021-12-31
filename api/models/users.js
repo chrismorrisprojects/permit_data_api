@@ -25,7 +25,10 @@ module.exports = (sequelize, DataTypes) => {
     address: DataTypes.TEXT,
     phoneNumber: DataTypes.STRING,
     emailToken: { type: String, default: null },
-    emailTokenExpires: { type: Date, default: null }
+    emailTokenExpires: { type: Date, default: null },
+    resetPasswordToken: { type: String, default: null },
+    resetPasswordExpires: { type: Date, default: null },
+    accessToken: DataTypes.TEXT
   }, {
     sequelize,
     modelName: 'users',

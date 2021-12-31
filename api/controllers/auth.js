@@ -1,6 +1,7 @@
 const users = require("../models").users
 const authSvc = require("../services/authService");
 const bcrypt = require("bcrypt");
+let validToken = false
 
 const register = async (req, res) => {
     try {
@@ -73,7 +74,6 @@ const login = async(req, res) =>{
                 email: email
             }
         })
-        console.log(user[0].dataValues)
         // NOT FOUND - Throw error
         if (!user) {
             return res.status(404).json({
@@ -104,11 +104,20 @@ const login = async(req, res) =>{
                 message: "Invalid credentials",
             });
         }
-
+        const { error, token } = await authSvc.generateJwt(user[0].dataValues.email, user[0].dataValues.id);
         //Success
+        if (error) {
+            return res.status(500).json({
+                error: true,
+                message: "Couldn't create access token. Please try again later",
+            });
+        }
+        user[0].accessToken = token;
+        await user[0].save();
         return res.send({
             success: true,
             message: "User logged in successfully",
+            accessToken: token
         });
     } catch (err) {
         console.error("Login error", err);
@@ -120,9 +129,158 @@ const login = async(req, res) =>{
 }
 
 
+const activate = async(req, res) => {
+    try {
+        const { email, code } = req.body;
+        if (!email || !code) {
+            return res.json({
+                error: true,
+                status: 400,
+                message: "Please make a valid request",
+            });
+        }
+        const user = await users.findOne({
+            where: {
+                email: email,
+                emailToken: code
+            }
+             // check if the code is expired
+        });
+        console.log(user.dataValues)
+        if (!user) {
+            return res.status(400).json({
+                error: true,
+                message: "Invalid details",
+            });
+        } else {
+            if (user.dataValues.active)
+                return res.send({
+                    error: true,
+                    message: "Account already activated",
+                    status: 400,
+                });
+            user.emailToken = "";
+            user.emailTokenExpires = null;
+            user.active = true;
+            await user.save();
+            return res.status(200).json({
+                success: true,
+                message: "Account activated.",
+            });
+        }
+    } catch (error) {
+        console.error("activation-error", error);
+        return res.status(500).json({
+            error: true,
+            message: error.message,
+        });
+    }
+}
+
+const resetPass = async(req, res) => {
+    try {
+        const { email } = req.body;
+        if (!email) {
+            return res.send({
+                status: 400,
+                error: true,
+                message: "Cannot be processed",
+            });
+        }
+        const user = await users.findOne({
+            where: {
+                email: email
+            }
+
+        });
+        if (!user) {
+            return res.send({
+                success: true,
+                message:
+                    "If that email address is in our database, we will send you an email to reset your password",
+            });
+        }
+        let code = Math.floor(100000 + Math.random() * 900000);
+        let response = await authSvc.sendRegEmail(email, code);
+        if (response.error) {
+            return res.status(500).json({
+                error: true,
+                message: "Couldn't send mail. Please try again later.",
+            });
+        }
+
+        let expiry = new Date(Date.now() + 60 * 1000 * 15).toISOString();
+        user.resetPasswordToken = code;
+        user.resetPasswordExpires = expiry; // 15 minutes
+        await user.save();
+        return res.send({
+            success: true,
+            message:
+                "If that email address is in our database, we will send you an email to reset your password",
+        });
+    } catch (error) {
+        console.error("forgot-password-error", error);
+        return res.status(500).json({
+            error: true,
+            message: error.message,
+        });
+    }
+}
+
+const changePass = async(req, res)=> {
+    try {
+        const { email, code, newPassword, confirmPassword } = req.body;
+        if (!code || !newPassword || !confirmPassword || !email) {
+            return res.status(403).json({
+                error: true,
+                message:
+                    "Couldn't process request. Please provide all mandatory fields",
+            });
+        }
+        const user = await users.findOne({
+            where: {
+                resetPasswordToken: code,
+                email: email
+            }
+
+        });
+        if (!user) {
+            return res.send({
+                error: true,
+                message: "Password reset token is invalid or has expired.",
+            });
+        }
+        if (newPassword !== confirmPassword) {
+            return res.status(400).json({
+                error: true,
+                message: "Passwords didn't match",
+            });
+        }
+        const hash = await authSvc.hashPassword(newPassword);
+        user.password = hash;
+        user.resetPasswordToken = null;
+        user.resetPasswordExpires = null;
+        await user.save();
+        return res.send({
+            success: true,
+            message: "Password has been changed",
+        });
+    } catch (error) {
+        console.error("reset-password-error", error);
+        return res.status(500).json({
+            error: true,
+            message: error.message,
+        });
+    }
+}
+
+
 
 
 module.exports={
     register,
-    login
+    login,
+    activate,
+    resetPass,
+    changePass,
 }

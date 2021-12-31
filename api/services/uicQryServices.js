@@ -1,4 +1,3 @@
-const {request} = require("express");
 const rrc_uic = require("../models").rrc_uic
 
 async function parseFilters(requestedFilter){
@@ -12,6 +11,7 @@ async function parseFilters(requestedFilter){
     }
     return actualFilter
 }
+
 
 
 module.exports = {

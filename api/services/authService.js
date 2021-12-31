@@ -1,6 +1,13 @@
 const nodemailer = require("nodemailer");
 const bcrypt = require("bcrypt");
 const users = require("../models").users
+const jose = require('jose')
+const {
+    webcrypto: {
+        subtle,
+    },
+    KeyObject,
+} = require('crypto');
 
 
 const smtpEndpoint = "smtp.sendgrid.net";
@@ -8,11 +15,12 @@ const port = process.env.SMTP_PORT
 const senderAddress = process.env.SENDER_ADDRESS
 const smtpUsername = process.env.SMTP_USERNAME
 const smtpPassword = process.env.SG_APIKEY
+const jwtSecret = JSON.parse(process.env.JWT_SECRET)
 const saltRounds = 10
+const expires = "1h"
 
 
-
-const  sendRegEmail= async (email, code) => {
+const sendRegEmail= async (email, code) => {
     try {
         let toAddress = email;
         let subject = "Verify your email";
@@ -84,9 +92,56 @@ const regError = async(errType) => {
     console.log(errType)
 }
 
+const generateJwt = async(email, userId) => {
+    try{
+        const keyObject = await jose.importJWK(jwtSecret, 'HS256')
+        const jwt = await new jose.SignJWT({ email: email, jti: userId })
+            .setProtectedHeader({ alg: 'HS256' })
+            .setIssuedAt()
+            .setIssuer('http://ogdatadb.com')
+            .setAudience('http://ogdatadb.com/api/')
+            .setExpirationTime(expires)
+            .sign(keyObject)
+        return {error: false, token: jwt}
+    } catch (error) {
+        console.log(error)
+        return { error: true };
+    }
+}
+
+const validateToken = async(token) => {
+    const keyObject = await jose.importJWK(jwtSecret, 'HS256')
+    let valid = false
+    await jose.jwtVerify(token, keyObject, {
+        issuer: 'http://ogdatadb.com',
+        audience: 'http://ogdatadb.com/api/'
+    }).then(result => {
+        valid = true
+    }).catch(error => {
+        valid = false
+    })
+    return valid
+}
+
+const checkToken = async(req, res, next) =>{
+    let token = req.body.token
+    let validToken = await validateToken(token)
+    if (validToken){
+        next()
+    } else{
+        let msg = {
+            message: "invalid token"
+        }
+        res.status(401).json(msg)
+    }
+}
+
 module.exports = {
     sendRegEmail,
     hashPassword,
     existingUser,
-    regError
+    regError,
+    generateJwt,
+    validateToken,
+    checkToken
 };
