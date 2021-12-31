@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const ctrlRrcUic = require( '../controllers/uicData')
-const ctrlRegister = require('../controllers/register')
+const ctrlAuth = require('../controllers/auth')
 
 
 router
@@ -10,7 +10,12 @@ router
 
 router
     .route('/register')
-    .post(ctrlRegister.register)
+    .post(ctrlAuth.register)
+
+router
+    .route('/login')
+    .post(ctrlAuth.login)
+
 
 
 
