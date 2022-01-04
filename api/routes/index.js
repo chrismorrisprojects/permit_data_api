@@ -4,21 +4,6 @@ const ctrlRrcUic = require( '../controllers/uicData')
 const ctrlAuth = require('../controllers/auth')
 const authSvc = require("../services/authService")
 
-
-
-//async function checkToken(req, res, next){
-//    let token = req.body.token
-//    validToken = await authSvc.validateToken(token)
-//    if (validToken){
-//        next()
-//    } else{
-//        let msg = {
-//            message: "invalid token"
-//        }
-//        res.status(401).json(msg)
-//    }
-//}
-
 router.post('/register', ctrlAuth.register)
 
 router.post('/login', ctrlAuth.login)
