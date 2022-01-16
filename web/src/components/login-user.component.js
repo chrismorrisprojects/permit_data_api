@@ -11,7 +11,10 @@ export default class AddUser extends Component {
 
     this.state = {
       email: null,
-      password: null
+      password: null,
+      success: null,
+      message: null,
+      accessToken: null
     };
   }
 
@@ -37,8 +40,9 @@ export default class AddUser extends Component {
     UserDataService.login(data)
       .then(response => {
         this.setState({
-          email: response.data.email,
-          password: response.data.password,
+          success: response.data.success,
+          message: response.data.message,
+          accessToken: response.data.accessToken,
           submitted: true
         });
         console.log(response.data);
@@ -62,9 +66,7 @@ export default class AddUser extends Component {
         {this.state.submitted ? (
           <div>
             <h4>You submitted successfully!</h4>
-            <button className="btn btn-success" onClick={this.newLogin}>
-              Login
-            </button>
+            <div>{this.state.accessToken}</div>
           </div>
         ) : (
           <div>

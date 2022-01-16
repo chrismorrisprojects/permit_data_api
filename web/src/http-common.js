@@ -1,7 +1,7 @@
 import axios from "axios";
 
 export default axios.create({
-  baseURL: "http://localhost:3002/api",
+  baseURL: "http://ogdatadb.com/api",
   headers: {
     "Content-type": "application/json"
   }
